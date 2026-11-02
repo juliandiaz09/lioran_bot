@@ -1,0 +1,81 @@
+[project]
+name = "chatbot-regulacion-emocional"
+version = "0.1.0"
+description = "Backend (arquitectura hexagonal) del chatbot de apoyo a la regulación emocional - UPTC Sogamoso / INFELCOM"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5",
+    "httpx>=0.27",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "import-linter>=2.0",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = ["integration: pruebas contra servicios reales (opcionales)"]
+addopts = "-m 'not integration'"
+
+[tool.coverage.run]
+source = ["src/chatbot/domain", "src/chatbot/application"]
+
+[tool.coverage.report]
+fail_under = 80
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "N"]
+ignore = ["N818"]  # errores de dominio llamados Invalid* por legibilidad
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = "src"
+explicit_package_bases = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["chatbot.domain.*", "chatbot.application.*"]
+strict = true
+
+# --- Regla de dependencias de la arquitectura hexagonal (import-linter) ---
+[tool.importlinter]
+root_package = "chatbot"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Capas: adapters -> application -> domain"
+type = "layers"
+layers = ["chatbot.adapters", "chatbot.application", "chatbot.domain"]
+
+[[tool.importlinter.contracts]]
+name = "domain y application no importan frameworks ni SDKs"
+type = "forbidden"
+source_modules = ["chatbot.domain", "chatbot.application"]
+forbidden_modules = [
+    "fastapi", "starlette", "uvicorn", "sqlalchemy", "asyncpg", "supabase",
+    "transformers", "torch", "sentence_transformers", "openai", "httpx",
+    "pydantic_settings",
+]
