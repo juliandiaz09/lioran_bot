@@ -7,3 +7,16 @@ __pycache__/
 .ruff_cache/
 .coverage
 *.egg-info/
+
+# Claude Code y orquestación de agentes
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.mcp.json
+.orchestration/
+retomar desde aquí.md
+# Artefactos de las skills (agent-skills: /spec, /plan, /constraints)
+/docs/SPEC.md
+/SPEC.md
+/tasks/
+/CONSTRAINTS.md
