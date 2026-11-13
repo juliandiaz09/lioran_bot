@@ -1,0 +1,9 @@
+# Léxico de prueba: una expresión regular que no compila (paréntesis sin cerrar).
+version: "prueba-patron-invalido"
+revisado_por: PENDIENTE
+categorias:
+  ideacion_suicida:
+    nivel: HIGH
+    patrones:
+      - quiero morirme
+      - regex: '(\bmorir'

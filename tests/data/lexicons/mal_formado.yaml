@@ -1,0 +1,7 @@
+# Léxico de prueba: YAML mal formado (lista sin cerrar).
+version: "prueba-mal-formado"
+revisado_por: PENDIENTE
+categorias:
+  ideacion_suicida:
+    nivel: HIGH
+    patrones: [quiero morirme, quitarme la vida

@@ -1,0 +1,8 @@
+# Léxico de prueba: una categoría con un nivel que no existe.
+version: "prueba-nivel-desconocido"
+revisado_por: PENDIENTE
+categorias:
+  ideacion_suicida:
+    nivel: ALTISIMO
+    patrones:
+      - quiero morirme

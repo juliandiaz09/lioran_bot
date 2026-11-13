@@ -1,0 +1,38 @@
+# Léxico SOLO para pruebas del motor: no es el léxico definitivo ni lo revisó psicología.
+version: "prueba-1.0"
+fecha: "2026-11-11"
+revisado_por: PENDIENTE
+normalizacion:
+  minusculas: true
+  quitar_tildes: true
+  colapsar_letras_repetidas: true
+  abreviaturas:
+    q: que
+    xq: porque
+    tmb: también
+    nose: no sé
+categorias:
+  malestar_agudo:
+    nivel: LOW
+    patrones:
+      - me muero
+  desesperanza_moderada:
+    nivel: MEDIUM
+    patrones:
+      - no puedo más
+      - nose q hacer
+  ideacion_suicida:
+    nivel: HIGH
+    patrones:
+      - quiero morirme
+      - quisiera estar muerto
+      - me mato
+      - regex: '\bSUICÍD\w*'
+  autolesion:
+    nivel: HIGH
+    patrones:
+      - hacerme daño
+excepciones_idiomaticas:
+  - me muero de la risa
+  - no puedo más de la risa
+  - me mato estudiando
