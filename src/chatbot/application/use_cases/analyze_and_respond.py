@@ -125,8 +125,11 @@ class AnalyzeAndRespond:
     # ------------------------------------------------------------------------- flujo
     async def execute(self, command: AnalyzeCommand) -> AnalysisResult:
         started = time.perf_counter()
-        texto = self._normalize(command.texto)  # 1
-        rules = self._risk_detector.detect(texto)  # 2
+        completo = self._normalize(command.texto)  # 1
+        # 2: el riesgo se detecta sobre el mensaje completo; recortar antes ocultaría una frase de
+        # riesgo al final de un mensaje largo (falso negativo de HIGH).
+        rules = self._risk_detector.detect(completo)
+        texto = self._truncate(completo)  # solo lo que va a los modelos, el RAG y la persistencia
 
         if rules.level.is_crisis:
             outcome = await self._crisis_outcome(
@@ -155,12 +158,17 @@ class AnalyzeAndRespond:
         return await self._finish(command, texto, outcome, started)  # 9, 10
 
     # ------------------------------------------------------------------------- 1. normalizar
-    def _normalize(self, texto: str) -> str:
-        """Solo espacios y longitud máxima: errores ortográficos y emojis son señal."""
-        limpio = " ".join(texto.split())[: self._cfg.max_text_length].strip()
+    @staticmethod
+    def _normalize(texto: str) -> str:
+        """Solo espacios, sin recortar: errores ortográficos y emojis son señal."""
+        limpio = " ".join(texto.split())
         if not limpio:
             raise EmptyMessage("El mensaje está vacío")
         return limpio
+
+    def _truncate(self, texto: str) -> str:
+        """Longitud máxima para el encoder y el LLM; nunca se aplica antes de detectar riesgo."""
+        return texto[: self._cfg.max_text_length].strip()
 
     # ------------------------------------------------------------------------- 3. clasificar
     async def _classify(
