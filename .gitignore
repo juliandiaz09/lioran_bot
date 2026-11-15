@@ -20,3 +20,9 @@ retomar desde aquí.md
 /SPEC.md
 /tasks/
 /CONSTRAINTS.md
+
+# Modelo ajustado del encoder: se inserta a mano en local y NO se versiona
+/models/*
+!/models/encoder/
+/models/encoder/*
+!/models/encoder/.gitkeep

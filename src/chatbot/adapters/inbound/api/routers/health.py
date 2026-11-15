@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 
 from chatbot.adapters.inbound.api.dependencies import ContainerDep
 
@@ -13,8 +14,11 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@router.get("/ready")
-async def ready(container: ContainerDep) -> dict[str, object]:
-    """Readiness: dependencias listas. (BD y modelos se verifican desde la Fase 5.)"""
-    checks = container.readiness()
-    return {"status": "ready", "checks": checks}
+@router.get("/ready", response_model=None)
+async def ready(container: ContainerDep) -> JSONResponse:
+    """Readiness real: 200 si todo está bien; 503 con el detalle por componente si algo falla."""
+    ok, checks = await container.check_readiness()
+    return JSONResponse(
+        status_code=200 if ok else 503,
+        content={"status": "ready" if ok else "not_ready", "checks": checks},
+    )

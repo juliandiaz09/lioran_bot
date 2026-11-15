@@ -1,0 +1,30 @@
+# Catálogo de estrategias de regulación emocional (versionado).
+# BORRADOR: contenido de ejemplo sin revisión clínica; debe validarlo psicología / Bienestar Universitario.
+# Los ids deben coincidir con `estrategia_id` de los documentos de técnica del RAG y con el bandido (Fase 6).
+version: "0.1.0-borrador"
+estrategias:
+  - id: respiracion_4_6
+    nombre: "Respiración 4-6"
+    tipo: respiracion
+    emociones_objetivo: [miedo, ira]
+    descripcion: "Inhalar 4 segundos, exhalar 6."
+  - id: grounding_5_sentidos
+    nombre: "Anclaje de los 5 sentidos"
+    tipo: grounding
+    emociones_objetivo: [miedo, sorpresa]
+    descripcion: "Nombrar lo que se ve, oye, toca, huele y saborea."
+  - id: reencuadre_cognitivo
+    nombre: "Reencuadre de pensamientos"
+    tipo: reencuadre_cognitivo
+    emociones_objetivo: [tristeza, miedo]
+    descripcion: "Examinar el pensamiento y buscar una alternativa."
+  - id: validacion_emocional
+    nombre: "Validación emocional"
+    tipo: validacion_emocional
+    emociones_objetivo: [tristeza, asco, neutral]
+    descripcion: "Nombrar y aceptar lo que se siente."
+  - id: planificacion_bloques
+    nombre: "Plan en bloques pequeños"
+    tipo: planificacion
+    emociones_objetivo: [miedo, ira, neutral]
+    descripcion: "Dividir la tarea en pasos de 25 minutos."

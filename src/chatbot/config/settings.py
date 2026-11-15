@@ -53,6 +53,7 @@ class Settings(BaseSettings):
 
     # Adaptadores (Fase 3+)
     encoder_backend: Literal["stub", "hf"] = "stub"
+    #: Solo informativo (logs). El modelo se carga SIEMPRE desde `encoder_model_path`, sin red.
     encoder_model_name: str = "pysentimiento/robertuito-emotion-analysis"
     encoder_temperature_file: str = "config/encoder_temperature.json"
     llm_backend: Literal["fake", "openai_compatible"] = "fake"
@@ -64,10 +65,44 @@ class Settings(BaseSettings):
     supabase_service_key: SecretStr = SecretStr("")
     embedding_model_name: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
+    # Adaptadores reales (Fase 5)
+    persistence_backend: Literal["memory", "postgres"] = "memory"
+    retriever_backend: Literal["memory", "pgvector"] = "memory"
+    store_user_text: bool = True
+    llm_timeout_s: float = Field(20.0, gt=0)
+    llm_max_retries: int = Field(2, ge=0)
+    encoder_device: str = "cpu"
+    encoder_model_path: str = "models/encoder"
+    embedding_dim: int = Field(384, gt=0)
+    db_pool_size: int = Field(5, ge=1)
+    prompts_dir: str = "prompts"
+    strategies_file: str = "config/strategies.yaml"
+    test_database_url: str = ""
+
     @model_validator(mode="after")
     def _check_fusion_weights(self) -> Settings:
         if self.fusion_weight_encoder + self.fusion_weight_llm <= 0:
             raise ValueError("La suma de los pesos de fusión debe ser mayor que 0")
+        return self
+
+    @model_validator(mode="after")
+    def _check_backend_combinations(self) -> Settings:
+        """Combinaciones incoherentes de adaptadores: el servicio no arranca (fail-fast)."""
+        if (
+            self.persistence_backend == "postgres" or self.retriever_backend == "pgvector"
+        ) and not self.database_url.strip():
+            raise ValueError(
+                "PERSISTENCE_BACKEND=postgres o RETRIEVER_BACKEND=pgvector requieren DATABASE_URL"
+            )
+        if self.llm_backend == "openai_compatible" and not (
+            self.llm_base_url.strip() and self.llm_model.strip()
+        ):
+            raise ValueError("LLM_BACKEND=openai_compatible requiere LLM_BASE_URL y LLM_MODEL")
+        if self.encoder_backend == "hf" and not self.encoder_model_path.strip():
+            raise ValueError("ENCODER_BACKEND=hf requiere ENCODER_MODEL_PATH")
+        if self.retriever_backend == "pgvector" and self.persistence_backend == "memory":
+            # Decisión de la Fase 5: combinación no soportada, se rechaza por simplicidad.
+            raise ValueError("RETRIEVER_BACKEND=pgvector no se admite con PERSISTENCE_BACKEND=memory")
         return self
 
     @model_validator(mode="after")

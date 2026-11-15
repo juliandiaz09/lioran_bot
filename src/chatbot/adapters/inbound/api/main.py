@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
 
@@ -22,8 +23,19 @@ def create_app(settings: Settings | None = None, container: Container | None = N
     settings = settings or get_settings()
     configure_logging(settings.log_level)
 
-    app = FastAPI(title="Chatbot de regulación emocional - Backend", version="0.1.0")
-    app.state.container = container or build_container(settings)
+    built = container or build_container(settings)
+
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+        # Fail-fast: si el warmup falla (modelo ausente, dimensión errónea...) el servicio NO arranca.
+        try:
+            await built.warmup()
+            yield
+        finally:
+            await built.close()  # cliente HTTP del LLM y pool de la BD
+
+    app = FastAPI(title="Chatbot de regulación emocional - Backend", version="0.1.0", lifespan=lifespan)
+    app.state.container = built
 
     @app.middleware("http")
     async def trace_middleware(
