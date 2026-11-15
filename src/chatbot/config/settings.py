@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     # Configuración declarativa
     secondary_emotions_file: str | None = None
     risk_lexicon_file: str = "config/risk_lexicon.yaml"
+    templates_dir: str = "config/templates"
 
     # Adaptadores (Fase 3+)
     encoder_backend: Literal["stub", "hf"] = "stub"

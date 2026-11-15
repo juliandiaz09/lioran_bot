@@ -1,0 +1,293 @@
+# =============================================================================================
+# LÉXICO DE RIESGO — BORRADOR TÉCNICO. NO USAR CON ESTUDIANTES REALES HASTA QUE LO APRUEBE
+# BIENESTAR UNIVERSITARIO / PSICOLOGÍA. Fuentes y vacíos: docs/fuentes_lexico_riesgo.md
+#
+# Reglas de escritura (el arranque falla si no se cumplen; ver rules_risk_detector.py):
+#   - Una frase se normaliza (minúsculas, sin tildes, letras repetidas colapsadas, abreviaturas
+#     expandidas) y se compara por palabras completas.
+#   - Una regex se compara contra el texto YA normalizado: escríbela sin tildes, sin letras
+#     dobles y con las abreviaturas expandidas. Toda repetición debe tener máximo (\w{0,8}); los
+#     huecos entre palabras se escriben con repetición posesiva (?:\s\w{1,20}+){0,3}.
+#   - Ante la duda, el nivel más alto. No hay manejo de negaciones: "no pienso hacerme daño"
+#     cuenta como riesgo (un falso positivo es preferible a un falso negativo).
+#   - Las excepciones idiomáticas SOLO rebajan patrones LOW y MEDIUM; nunca un HIGH.
+# =============================================================================================
+version: "0.1.0-borrador"
+fecha: "2026-11-14"
+revisado_por: PENDIENTE
+
+normalizacion:
+  minusculas: true
+  quitar_tildes: true
+  colapsar_letras_repetidas: true
+  abreviaturas:
+    q: que
+    k: que
+    ke: que
+    xq: porque
+    pq: porque
+    pk: porque
+    tmb: tambien
+    tb: tambien
+    nose: no se
+    ns: no se
+    kiero: quiero
+    kero: quiero
+    kisiera: quisiera
+    stoy: estoy
+    toy: estoy
+    xa: para
+    pa: para
+    x: por
+    d: de
+    mrir: morir
+    suicidarm: suicidarme
+
+categorias:
+  ideacion_suicida:
+    nivel: HIGH
+    patrones:
+      # --- términos directos (con variantes ortográficas frecuentes)
+      - regex: '\b(?:suicid|sucid|suisid|sicid)\w{0,8}'
+      # --- deseo de morir / ideación activa
+      - regex: '\b(?:quiero|quisiera|queria|ojala|prefiero|preferiria|deseo|pienso|pensando)(?:\s\w{1,20}+){0,3}\s+morir'
+      - regex: '\b(?:quiero|quisiera|queria|ojala|prefiero|deseo|pienso|pensando)(?:\s\w{1,20}+){0,2}\s+matarm\w{1,3}\b'
+      - regex: '\bganas\s+de\s+(?:morir\w{0,3}|matarm\w{1,3})\b'
+      - regex: '\b(?:me\s+quiero|me\s+voy\s+a|me\s+quisiera|me\s+van\s+a\s+encontrar)(?:\s\w{1,20}+){0,2}\s+(?:morir|matar|suicidar|quitar\s+la\s+vida)'
+      - quiero estar muerto
+      - quiero estar muerta
+      - quisiera estar muerto
+      - quisiera estar muerta
+      - ojala me muera
+      - ojala me muriera
+      - ojala no despertar
+      - ojala no despertara
+      - ojala no despierte
+      - quiero dejar de existir
+      - dejar de existir
+      - mejor no existir
+      - seria mejor no existir
+      - seria mejor que no existiera
+      - seria mejor que no estuviera
+      - todos estarian mejor sin mi
+      - estarian mejor sin mi
+      - nadie me va a extranar
+      - nadie me extranaria
+      - quiero desaparecer
+      - quisiera desaparecer
+      - quiero desaparecer para siempre
+      - quiero descansar para siempre
+      - descansar para siempre
+      - dormir para siempre
+      # --- ya no quiero vivir
+      - regex: '\bno\s+(?:quiero|puedo|pienso|deseo|aguanto|soporto)\s+(?:\w{1,20}+\s){0,2}(?:vivir|viviendo|existir|despertar)'
+      - regex: '\bya\s+no\s+(?:quiero|puedo|pienso|deseo|aguanto|soporto)\s+(?:\w{1,20}+\s){0,2}(?:vivir|viviendo|existir|despertar)'
+      - regex: '\bdormir\s+y\s+no\s+despertar'
+      - regex: '\b(?:harto|harta|cansado|cansada|agotado|agotada)\s+de\s+(?:vivir|la\s+vida|esta\s+vida|estar\s+vivo|estar\s+viva)'
+      - no aguanto esta vida
+      - no soporto esta vida
+      - no quiero seguir viviendo
+      - me quiero ir de este mundo
+      - quiero irme de este mundo
+      - ya no quiero estar en este mundo
+      - ya no quiero estar aqui
+      # --- plan, método y acciones preparatorias
+      - quitarme la vida
+      - quitarse la vida
+      - acabar con mi vida
+      - terminar con mi vida
+      - acabar con todo
+      - terminar con todo
+      - acabar conmigo
+      - acabar con esto
+      - regex: '\bpegarme\s+un\s+tiro'
+      - regex: '\b(?:ahorcarm\w{1,3}|colgarm\w{1,3}|ahorcar\s+me|ahorcarse)\b'
+      - regex: '\btirarm\w{1,3}\s+(?:\w{1,20}+\s){0,2}(?:puente|edificio|balcon|ventana|vacio|terraza|tren|bus)'
+      - regex: '\bme\s+voy\s+a\s+tirar\s+(?:\w{1,20}+\s){0,2}(?:puente|edificio|balcon|ventana|vacio|terraza)'
+      - regex: '\btomarm\w{1,3}\s+(?:\w{1,20}+\s){0,3}pastillas'
+      - regex: '\btomar(?:me)?\s+(?:\w{1,20}+\s){0,2}todas\s+(?:las|mis)\s+pastillas'
+      - regex: '\bpastillas\s+(?:\w{1,20}+\s){0,3}(?:no\s+despertar|morir|acabar)'
+      - sobredosis
+      - despedirme de todos
+      - ya me despedi
+      - carta de despedida
+      - dejar una carta
+      - nota de suicidio
+
+  autolesion:
+    nivel: HIGH
+    patrones:
+      - regex: '\bautolesi\w{0,10}'
+      - regex: '\b(?:self\s*harm\w{0,3}|cutting)\b'
+      - regex: '\b(?:cortarm\w{1,3}|cortarse)\b'
+      - regex: '\bcortar(?:\s\w{1,20}+){0,2}\s+(?:venas|munecas|brazos)'
+      - regex: '\bme\s+(?:estoy\s+haciendo|hago|hice|he\s+hecho)\s+dano'
+      - regex: '\bme\s+(?:corto|estoy\s+cortando|he\s+cortado|cortaba|corte)\b'
+      - regex: '\b(?:rayarm\w{1,3}|me\s+rayo|me\s+raye)\s+(?:\w{1,20}+\s){0,2}(?:brazos?|munecas?|piernas?|piel)'
+      - hacerme dano
+      - me hago dano
+      - me hice dano
+      - me voy a hacer dano
+      - lastimarme
+      - lastimarse a si mismo
+      - me lastimo
+      - me quemo con
+      - quemarme con
+      - me hago cortes
+      - hacerme cortes
+      - me hago heridas
+      - me hago sangrar
+      - golpearme la cabeza
+      - me golpeo la cabeza
+      - regex: '\bme\s+(?:\w{1,20}+\s){0,2}(?:cuchilla|navaja|bisturi|gillette)\b'
+
+  violencia_hacia_otros:
+    nivel: HIGH
+    patrones:
+      - regex: '\b(?:lo|la|los|las|le|les)\s+voy\s+a\s+(?:matar|asesinar|acuchillar|apunalar|golpear|disparar)\w{0,3}'
+      - regex: '\bvoy\s+a\s+(?:matar|asesinar|acuchillar|apunalar|disparar)\w{0,3}\b'
+      - regex: '\b(?:quiero|quisiera|pienso)(?:\s\w{1,20}+){0,2}\s+(?:matar|asesinar|acuchillar|apunalar)\w{0,3}\b'
+      - regex: '\b(?:dan\s+)?ganas\s+de\s+(?:matar|asesinar|acuchillar)\w{0,3}\b'
+      - regex: '\b(?:lo|la|los|las)\s+(?:mato|asesino|acuchillo)\b'
+      - quiero verlo muerto
+      - quiero verla muerta
+      - quiero verlos muertos
+      - voy a hacerle dano
+      - voy a hacerles dano
+      - voy a acabar con el
+      - voy a acabar con ella
+      - voy a acabar con ellos
+      - va a pagar con su vida
+      - van a pagar con su vida
+      - voy a traer un arma
+      - llevar un arma a la universidad
+      - llevar un arma al colegio
+      - voy a hacer una masacre
+      - masacre en la universidad
+      - tiroteo en la universidad
+      - se van a arrepentir todos
+      - lo voy a mandar al hospital
+
+  desesperanza_severa:
+    nivel: HIGH
+    patrones:
+      - no tengo salida
+      - no veo salida
+      - no hay salida
+      - no hay salida para mi
+      - estoy sin salida
+      - esto nunca va a mejorar
+      - nunca voy a salir de esto
+      - no hay esperanza
+      - ya no hay esperanza
+      - perdi la esperanza
+      - no tengo esperanza
+      - ya nada tiene sentido
+      - nada tiene sentido
+      - la vida no tiene sentido
+      - mi vida no tiene sentido
+      - ya no tiene sentido vivir
+      - regex: '\bno\s+le\s+(?:veo|encuentro|hallo|busco)\s+(?:ningun\s+)?sentido\s+a\s+(?:la\s+vida|vivir|seguir\s+viviendo)'
+      - mi vida no vale nada
+      - soy una carga para todos
+      - soy una carga
+      - soy un estorbo para todos
+      - estoy de mas en este mundo
+      - sobro en este mundo
+      - no merezco vivir
+      - no merezco estar vivo
+      - no merezco estar viva
+      - para que sigo viviendo
+      - para que seguir viviendo
+      - para que vivir
+      - no tiene caso vivir
+      - no vale la pena vivir
+      - no vale la pena seguir viviendo
+
+  desesperanza_moderada:
+    nivel: MEDIUM
+    patrones:
+      - no puedo mas
+      - ya no puedo mas
+      - no aguanto mas
+      - ya no aguanto
+      - no doy mas
+      - estoy agotado de todo
+      - estoy agotada de todo
+      - nada me importa
+      - ya nada importa
+      - nada va a mejorar
+      - nada va a cambiar
+      - no le encuentro sentido a nada
+      - todo me sale mal
+      - no valgo nada
+      - siento que no valgo nada
+      - soy un fracaso
+      - me siento vacio
+      - me siento vacia
+      - estoy vacio por dentro
+      - estoy vacia por dentro
+      - no tengo ganas de nada
+      - quiero que todo se acabe
+      - quiero que todo termine
+      - quiero que esto se acabe
+      - quisiera no sentir nada
+      - toque fondo
+      - estoy tocando fondo
+      - ya me rendi
+      - me rindo
+      - no veo futuro
+      - no tengo futuro
+      - no se que hacer con mi vida
+      - ojala se muera
+
+  malestar_agudo:
+    nivel: LOW
+    patrones:
+      - me muero
+      - me mato
+      - me siento muy mal
+      - me siento mal
+      - estoy muy mal
+      - estoy mal
+      - estoy desesperado
+      - estoy desesperada
+      - ataque de panico
+      - crisis de ansiedad
+      - no puedo respirar
+      - no puedo dormir
+      - no duermo
+      - no paro de llorar
+      - llorando todo el dia
+      - me siento solo
+      - me siento sola
+      - no tengo a nadie
+      - estoy muy estresado
+      - estoy muy estresada
+      - estoy muy triste
+      - tengo mucho miedo
+      - estoy angustiado
+      - estoy angustiada
+      - tengo ansiedad
+      - estoy harto
+      - estoy harta
+
+# Frases idiomáticas que NO son riesgo. Solo rebajan LOW/MEDIUM (nunca un HIGH).
+excepciones_idiomaticas:
+  - me muero de la risa
+  - me muero de risa
+  - me muero de hambre
+  - me muero de sueno
+  - me muero de calor
+  - me muero de frio
+  - me muero de la pena
+  - me muero de la verguenza
+  - me muero de ganas
+  - me muero de envidia
+  - me muero por ver
+  - me muero por saber
+  - me mato estudiando
+  - me mato trabajando
+  - me mato de la risa
+  - me mato haciendo
+  - me estoy matando estudiando

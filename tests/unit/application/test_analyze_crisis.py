@@ -3,9 +3,8 @@ import time
 from chatbot.adapters.outbound.llm.llm_fake import FakeLLM
 from chatbot.adapters.outbound.memory.knowledge import InMemoryKnowledgeBase
 from chatbot.application.dto import AnalyzeConfig, LLMClassification
-from chatbot.application.templates import CRISIS_NO_CONTACTS
 from chatbot.domain.models import RiskLevel
-from helpers import MIEDO, TEXTO_CRISIS, TEXTO_NORMAL, command, make_harness
+from helpers import MIEDO, TEMPLATES, TEXTO_CRISIS, TEXTO_NORMAL, command, make_harness
 
 
 async def test_riesgo_alto_por_reglas_cortocircuita_sin_llm_ni_encoder():
@@ -37,7 +36,7 @@ async def test_crisis_responde_rapido_aunque_el_llm_este_lento():
 async def test_crisis_sin_catalogo_no_inventa_telefonos():
     h = await make_harness(seed_kb=False)
     r = await h.use_case.execute(command(TEXTO_CRISIS))
-    assert r.es_crisis and CRISIS_NO_CONTACTS in r.respuesta
+    assert r.es_crisis and TEMPLATES.crisis_sin_contactos in r.respuesta
     assert not any(ch.isdigit() for ch in r.respuesta)
 
 
@@ -49,7 +48,7 @@ async def test_crisis_con_catalogo_caido_sigue_respondiendo():
 
     h.kb.institutional_info = boom  # type: ignore[method-assign]
     r = await h.use_case.execute(command(TEXTO_CRISIS))
-    assert r.es_crisis and CRISIS_NO_CONTACTS in r.respuesta
+    assert r.es_crisis and TEMPLATES.crisis_sin_contactos in r.respuesta
 
 
 async def test_el_llm_puede_elevar_a_crisis():

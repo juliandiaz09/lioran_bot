@@ -1,4 +1,4 @@
-"""Punto de entrada FastAPI. `create_app` permite inyectar settings en las pruebas."""
+"""Punto de entrada FastAPI. `create_app` permite inyectar settings y un contenedor con dobles (pruebas)."""
 
 from __future__ import annotations
 
@@ -7,8 +7,8 @@ from collections.abc import Awaitable, Callable
 from fastapi import FastAPI, Request, Response
 
 from chatbot.adapters.inbound.api.error_handlers import register_error_handlers
-from chatbot.adapters.inbound.api.routers import health
-from chatbot.config.container import build_container
+from chatbot.adapters.inbound.api.routers import analyze, health, strategies
+from chatbot.config.container import Container, build_container
 from chatbot.config.settings import Settings, get_settings
 from chatbot.shared.ids import parse_trace_id
 from chatbot.shared.logging import configure_logging
@@ -16,12 +16,14 @@ from chatbot.shared.logging import configure_logging
 TRACE_HEADER = "X-Trace-Id"
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None, container: Container | None = None) -> FastAPI:
+    if container is not None:
+        settings = container.settings
     settings = settings or get_settings()
     configure_logging(settings.log_level)
 
     app = FastAPI(title="Chatbot de regulación emocional - Backend", version="0.1.0")
-    app.state.container = build_container(settings)
+    app.state.container = container or build_container(settings)
 
     @app.middleware("http")
     async def trace_middleware(
@@ -35,6 +37,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     register_error_handlers(app)
     app.include_router(health.router)
+    app.include_router(analyze.router)
+    app.include_router(strategies.router)
     return app
 
 

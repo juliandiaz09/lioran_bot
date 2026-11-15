@@ -26,7 +26,9 @@ from chatbot.application.dto import (
     AnalyzeCommand,
     AnalyzeConfig,
     ConversationHistory,
+    CrisisEvent,
     GenerationContext,
+    ResponseTemplates,
     RetrievalQuery,
     RetrievedChunk,
     SourceRef,
@@ -36,6 +38,7 @@ from chatbot.application.errors import EmptyMessage
 from chatbot.application.ports.outbound import (
     ClockPort,
     ConversationRepositoryPort,
+    CrisisEventPort,
     EmotionClassifierPort,
     IdGeneratorPort,
     LLMPort,
@@ -45,7 +48,6 @@ from chatbot.application.ports.outbound import (
     StrategyCatalogPort,
     StrategySelectorPort,
 )
-from chatbot.application.templates import SAFE_TEMPLATE, render_crisis_response
 from chatbot.domain.errors import DomainError
 from chatbot.domain.models import (
     BanditContext,
@@ -86,6 +88,8 @@ class _Outcome:
     fuentes: tuple[SourceRef, ...]
     es_crisis: bool
     degradado: bool
+    #: Categorías de riesgo detectadas por reglas (solo nombres; nunca texto del usuario).
+    categorias: tuple[str, ...] = ()
 
 
 class AnalyzeAndRespond:
@@ -105,6 +109,8 @@ class AnalyzeAndRespond:
         repository: ConversationRepositoryPort,
         clock: ClockPort,
         ids: IdGeneratorPort,
+        templates: ResponseTemplates,
+        crisis_events: CrisisEventPort,
         config: AnalyzeConfig | None = None,
     ) -> None:
         self._encoder = encoder
@@ -120,6 +126,8 @@ class AnalyzeAndRespond:
         self._repo = repository
         self._clock = clock
         self._ids = ids
+        self._templates = templates
+        self._crisis_events = crisis_events
         self._cfg = config or AnalyzeConfig()
 
     # ------------------------------------------------------------------------- flujo
@@ -133,7 +141,7 @@ class AnalyzeAndRespond:
 
         if rules.level.is_crisis:
             outcome = await self._crisis_outcome(
-                self._risk_policy.assess(rules.level), _Classification(), texto, command
+                self._risk_policy.assess(rules.level), _Classification(), texto, command, rules.categorias
             )
             return await self._finish(command, texto, outcome, started)
 
@@ -152,7 +160,7 @@ class AnalyzeAndRespond:
             rules.level, classification.llm_risk, history.risk_levels
         )
         if assessment.is_crisis:
-            outcome = await self._crisis_outcome(assessment, classification, texto, command)
+            outcome = await self._crisis_outcome(assessment, classification, texto, command, rules.categorias)
         else:
             outcome = await self._respond(assessment, classification, texto, history, command)
         return await self._finish(command, texto, outcome, started)  # 9, 10
@@ -202,6 +210,7 @@ class AnalyzeAndRespond:
         classification: _Classification,
         texto: str,
         command: AnalyzeCommand,
+        categorias: tuple[str, ...] = (),
     ) -> _Outcome:
         chunks = await self._guard(
             self._retriever.institutional_info(),
@@ -212,7 +221,7 @@ class AnalyzeAndRespond:
         fragmentos = tuple(chunks or ())
         secondary = self._secondary_for(classification, texto)
         return _Outcome(
-            respuesta=render_crisis_response([c.texto for c in fragmentos]),
+            respuesta=self._templates.render_crisis([c.texto for c in fragmentos]),
             assessment=assessment,
             classification=classification,
             secondary=secondary,
@@ -221,6 +230,7 @@ class AnalyzeAndRespond:
             fuentes=self._sources(fragmentos),
             es_crisis=True,
             degradado=False,
+            categorias=categorias,
         )
 
     # ------------------------------------------------------------------------- 5-8 respuesta
@@ -238,7 +248,7 @@ class AnalyzeAndRespond:
 
         def safe(strategy: Strategy | None = None, ctx: BanditContext | None = None) -> _Outcome:
             return _Outcome(
-                SAFE_TEMPLATE, assessment, classification, secondary, strategy, ctx, (), False, True
+                self._templates.segura, assessment, classification, secondary, strategy, ctx, (), False, True
             )
 
         if dist is None:  # ningún modelo respondió
@@ -385,6 +395,22 @@ class AnalyzeAndRespond:
 
         # Un fallo de persistencia queda en el log; no se le niega la respuesta al usuario.
         await self._guard(persist(), self._cfg.persistence_timeout_s, "persistencia", command)
+
+        if outcome.es_crisis:  # marca el caso para el seguimiento humano (sin el texto del usuario)
+            event = CrisisEvent(
+                trace_id=command.trace_id,
+                conversation_id=command.conversation_id,
+                user_ref=command.user_ref,
+                categorias=outcome.categorias,
+                fuente_riesgo=outcome.assessment.source,
+                timestamp=bot_msg.timestamp,
+            )
+
+            async def notify() -> bool:
+                await self._crisis_events.register(event)
+                return True
+
+            await self._guard(notify(), self._cfg.persistence_timeout_s, "evento_crisis", command)
 
         logger.info(
             "analisis_completado",

@@ -9,6 +9,13 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from chatbot.application.errors import (
+    AnalysisNotFound,
+    DuplicateFeedback,
+    EmptyMessage,
+    FeedbackNotApplicable,
+    IngestError,
+)
 from chatbot.domain.errors import DomainError
 from chatbot.shared.ids import new_trace_id
 
@@ -22,6 +29,23 @@ _CODES = {
     405: "metodo_no_permitido",
     422: "validacion_fallida",
 }
+
+
+#: Estado HTTP por clase de error (capa de adaptador: el dominio no conoce HTTP). El resto, 422.
+_DOMAIN_STATUS: dict[type[DomainError], int] = {
+    EmptyMessage: 422,
+    AnalysisNotFound: 404,
+    DuplicateFeedback: 409,
+    FeedbackNotApplicable: 409,
+    IngestError: 422,
+}
+
+
+def domain_status(exc: DomainError) -> int:
+    for clase in type(exc).__mro__:
+        if clase in _DOMAIN_STATUS:
+            return _DOMAIN_STATUS[clase]
+    return 422
 
 
 def error_body(codigo: str, mensaje: str) -> dict[str, dict[str, str]]:
@@ -45,7 +69,7 @@ def register_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(DomainError)
     async def _domain(_: Request, exc: DomainError) -> JSONResponse:
-        return JSONResponse(error_body(exc.codigo, exc.mensaje), status_code=422)
+        return JSONResponse(error_body(exc.codigo, exc.mensaje), status_code=domain_status(exc))
 
     @app.exception_handler(Exception)
     async def _unexpected(request: Request, exc: Exception) -> JSONResponse:

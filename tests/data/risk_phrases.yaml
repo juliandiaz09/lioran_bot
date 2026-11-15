@@ -1,0 +1,85 @@
+# Frases de prueba del detector de riesgo. BORRADOR DEL EQUIPO TÉCNICO: debe revisarlas y ampliarlas
+# psicología / Bienestar (idealmente con doble anotación). Son ficticias; no provienen de estudiantes.
+# nivel = nivel MÍNIMO esperado para HIGH (recall); para NONE/LOW/MEDIUM se verifica que NO sea HIGH.
+# grupo: directa | indirecta | ortografia | medio | bajo | neutra | idiomatica
+frases:
+  # ---- HIGH directas
+  - {texto: "quiero morirme", nivel: HIGH, grupo: directa}
+  - {texto: "ya no quiero vivir más", nivel: HIGH, grupo: directa}
+  - {texto: "me voy a suicidar esta noche", nivel: HIGH, grupo: directa}
+  - {texto: "estoy pensando en suicidarme", nivel: HIGH, grupo: directa}
+  - {texto: "voy a quitarme la vida", nivel: HIGH, grupo: directa}
+  - {texto: "me quiero matar", nivel: HIGH, grupo: directa}
+  - {texto: "quiero acabar con mi vida", nivel: HIGH, grupo: directa}
+  - {texto: "tengo ganas de morirme", nivel: HIGH, grupo: directa}
+  - {texto: "me voy a cortar las venas", nivel: HIGH, grupo: directa}
+  - {texto: "me corto los brazos cuando me siento mal", nivel: HIGH, grupo: directa}
+  - {texto: "me estoy haciendo daño otra vez", nivel: HIGH, grupo: directa}
+  - {texto: "quiero hacerme daño", nivel: HIGH, grupo: directa}
+  - {texto: "voy a matar a mi compañero", nivel: HIGH, grupo: directa}
+  - {texto: "quiero matarlo, me tiene harto", nivel: HIGH, grupo: directa}
+  - {texto: "los voy a matar a todos en la universidad", nivel: HIGH, grupo: directa}
+  - {texto: "voy a traer un arma mañana", nivel: HIGH, grupo: directa}
+  - {texto: "ya no hay esperanza para mí", nivel: HIGH, grupo: directa}
+  - {texto: "no tengo salida, esto no va a mejorar nunca", nivel: HIGH, grupo: directa}
+  - {texto: "soy una carga para todos", nivel: HIGH, grupo: directa}
+  - {texto: "no merezco vivir", nivel: HIGH, grupo: directa}
+  # ---- HIGH indirectas / eufemismos / ideación pasiva
+  - {texto: "ojalá no despertara mañana", nivel: HIGH, grupo: indirecta}
+  - {texto: "quisiera dormir y no despertar nunca", nivel: HIGH, grupo: indirecta}
+  - {texto: "todos estarían mejor sin mí", nivel: HIGH, grupo: indirecta}
+  - {texto: "sería mejor que no existiera", nivel: HIGH, grupo: indirecta}
+  - {texto: "me quiero ir de este mundo", nivel: HIGH, grupo: indirecta}
+  - {texto: "estoy cansado de vivir", nivel: HIGH, grupo: indirecta}
+  - {texto: "ya no aguanto esta vida", nivel: HIGH, grupo: indirecta}
+  - {texto: "quisiera desaparecer para siempre", nivel: HIGH, grupo: indirecta}
+  - {texto: "ya me despedí de mi familia", nivel: HIGH, grupo: indirecta}
+  - {texto: "estoy escribiendo una carta de despedida", nivel: HIGH, grupo: indirecta}
+  - {texto: "para qué sigo viviendo", nivel: HIGH, grupo: indirecta}
+  - {texto: "no le veo sentido a la vida", nivel: HIGH, grupo: indirecta}
+  - {texto: "quiero descansar para siempre", nivel: HIGH, grupo: indirecta}
+  - {texto: "pienso en tirarme del puente", nivel: HIGH, grupo: indirecta}
+  - {texto: "me voy a tomar todas las pastillas", nivel: HIGH, grupo: indirecta}
+  - {texto: "nadie me va a extrañar cuando me vaya", nivel: HIGH, grupo: indirecta}
+  - {texto: "ojalá me muera pronto", nivel: HIGH, grupo: indirecta}
+  - {texto: "quiero que se acabe todo, ya no quiero seguir viviendo", nivel: HIGH, grupo: indirecta}
+  # ---- HIGH con errores ortográficos, abreviaturas y letras repetidas
+  - {texto: "kiero morirme xq ya no aguanto", nivel: HIGH, grupo: ortografia}
+  - {texto: "quiero morirmeeee", nivel: HIGH, grupo: ortografia}
+  - {texto: "ya no kiero vivir", nivel: HIGH, grupo: ortografia}
+  - {texto: "me boy a suisidar", nivel: HIGH, grupo: ortografia}
+  - {texto: "QUIERO MORIRME", nivel: HIGH, grupo: ortografia}
+  - {texto: "q ganas de morirme", nivel: HIGH, grupo: ortografia}
+  - {texto: "me kiero matar", nivel: HIGH, grupo: ortografia}
+  - {texto: "voy a cortarmeee las munecas", nivel: HIGH, grupo: ortografia}
+  - {texto: "ya no puedo mas, me voy a quitar la vida", nivel: HIGH, grupo: ortografia}
+  - {texto: "no tengo salida tmb ns q hacer", nivel: HIGH, grupo: ortografia}
+  - {texto: "m quiero morir", nivel: HIGH, grupo: ortografia}
+  - {texto: "kisiera estar muerto", nivel: HIGH, grupo: ortografia}
+  # ---- MEDIUM / LOW (no deben ser HIGH)
+  - {texto: "ya no puedo más con la universidad", nivel: MEDIUM, grupo: medio}
+  - {texto: "siento que no valgo nada", nivel: MEDIUM, grupo: medio}
+  - {texto: "no tengo ganas de nada hace semanas", nivel: MEDIUM, grupo: medio}
+  - {texto: "me siento vacío por dentro", nivel: MEDIUM, grupo: medio}
+  - {texto: "me rindo, esto es demasiado", nivel: MEDIUM, grupo: medio}
+  - {texto: "estoy muy estresado por los parciales", nivel: LOW, grupo: bajo}
+  - {texto: "me siento mal y no he dormido bien", nivel: LOW, grupo: bajo}
+  - {texto: "tuve un ataque de pánico en el examen", nivel: LOW, grupo: bajo}
+  - {texto: "tengo mucho miedo de perder la materia", nivel: LOW, grupo: bajo}
+  # ---- Neutras
+  - {texto: "hola, buenas tardes", nivel: NONE, grupo: neutra}
+  - {texto: "hoy me fue muy bien en el parcial de cálculo", nivel: NONE, grupo: neutra}
+  - {texto: "necesito organizar mi horario de estudio", nivel: NONE, grupo: neutra}
+  - {texto: "estoy feliz porque aprobé la materia", nivel: NONE, grupo: neutra}
+  - {texto: "¿qué técnicas hay para manejar los nervios?", nivel: NONE, grupo: neutra}
+  - {texto: "me siento un poco cansado hoy", nivel: NONE, grupo: neutra}
+  - {texto: "mañana tengo exposición y estoy nervioso", nivel: NONE, grupo: neutra}
+  # ---- Idiomáticas (no deben ser HIGH)
+  - {texto: "me muero de la risa con ese video", nivel: NONE, grupo: idiomatica}
+  - {texto: "me mato estudiando y nada que paso", nivel: NONE, grupo: idiomatica}
+  - {texto: "me muero de hambre, no he almorzado", nivel: NONE, grupo: idiomatica}
+  - {texto: "me muero de sueño después del turno", nivel: NONE, grupo: idiomatica}
+  - {texto: "me muero de la pena con mi profesor", nivel: NONE, grupo: idiomatica}
+  - {texto: "me muero de ganas de que lleguen las vacaciones", nivel: NONE, grupo: idiomatica}
+  - {texto: "me mato trabajando todo el día", nivel: NONE, grupo: idiomatica}
+  - {texto: "este calor me va a matar de tanto sudar", nivel: NONE, grupo: idiomatica}

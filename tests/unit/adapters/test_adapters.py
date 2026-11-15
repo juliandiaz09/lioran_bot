@@ -4,10 +4,10 @@ from chatbot.adapters.outbound.classifier.encoder_stub import StubEncoder
 from chatbot.adapters.outbound.llm.llm_fake import FakeLLM
 from chatbot.adapters.outbound.rag.chunker import ParagraphChunker
 from chatbot.adapters.outbound.rag.embedder import HashEmbedder
-from chatbot.adapters.outbound.risk.basic_risk_detector import BasicRiskDetector
 from chatbot.adapters.outbound.validation.response_validator import RuleBasedResponseValidator
 from chatbot.application.dto import RetrievedChunk
 from chatbot.domain.models import Emotion, RiskLevel
+from doubles.basic_risk_detector import BasicRiskDetector
 
 
 @pytest.mark.parametrize(

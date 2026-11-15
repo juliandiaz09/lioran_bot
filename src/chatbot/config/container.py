@@ -13,6 +13,7 @@ from pathlib import Path
 
 from chatbot.adapters.outbound.classifier.encoder_stub import StubEncoder
 from chatbot.adapters.outbound.llm.llm_fake import FakeLLM
+from chatbot.adapters.outbound.memory.crisis import InMemoryCrisisEventRepository
 from chatbot.adapters.outbound.memory.knowledge import InMemoryKnowledgeBase, InMemoryStrategyCatalog
 from chatbot.adapters.outbound.memory.repositories import (
     InMemoryConversationRepository,
@@ -23,15 +24,16 @@ from chatbot.adapters.outbound.memory.selector import RuleBasedSelector
 from chatbot.adapters.outbound.memory.system import SystemClock, UuidGenerator
 from chatbot.adapters.outbound.rag.chunker import ParagraphChunker
 from chatbot.adapters.outbound.rag.embedder import HashEmbedder
-from chatbot.adapters.outbound.risk.basic_risk_detector import BasicRiskDetector
+from chatbot.adapters.outbound.risk.rules_risk_detector import RulesRiskDetector
 from chatbot.adapters.outbound.validation.response_validator import RuleBasedResponseValidator
-from chatbot.application.dto import ENCODER_MODEL, LLM_MODEL, AnalyzeConfig
+from chatbot.application.dto import ENCODER_MODEL, LLM_MODEL, AnalyzeConfig, ResponseTemplates
 from chatbot.application.ports.inbound.use_cases import (
     AnalyzeAndRespondPort,
     IngestDocumentsPort,
     ListStrategiesPort,
     RegisterFeedbackPort,
 )
+from chatbot.application.ports.outbound import CrisisEventPort, RiskDetectorPort
 from chatbot.application.use_cases import (
     AnalyzeAndRespond,
     IngestDocuments,
@@ -39,6 +41,7 @@ from chatbot.application.use_cases import (
     RegisterFeedback,
 )
 from chatbot.config.settings import Settings
+from chatbot.config.templates_loader import load_response_templates
 from chatbot.domain.services import (
     DEFAULT_RULES,
     FusionService,
@@ -57,12 +60,18 @@ class Container:
     register_feedback: RegisterFeedbackPort
     ingest_documents: IngestDocumentsPort
     list_strategies: ListStrategiesPort
+    risk_detector: RiskDetectorPort
+    templates: ResponseTemplates
+    crisis_events: CrisisEventPort
 
     def readiness(self) -> dict[str, str]:
         """Estado de los componentes. Se amplía con BD y modelos en la Fase 5."""
+        version = getattr(self.risk_detector, "version", "desconocida")
         return {
             "dominio": "ok",
             "casos_de_uso": "ok",
+            "lexico_riesgo": f"ok ({version})",
+            "plantillas": "ok (" + "; ".join(f"{k}={v}" for k, v in self.templates.versiones.items()) + ")",
             "base_de_datos": "pendiente_fase_5",
             "modelos": "pendiente_fase_5",
         }
@@ -90,11 +99,15 @@ def build_container(settings: Settings) -> Container:
     catalog = InMemoryStrategyCatalog(seed_strategies())
     conversations = InMemoryConversationRepository()
     selector = RuleBasedSelector()
+    # Fail-fast: sin léxico o plantillas válidos el servicio no arranca (ruta de crisis sin red de seguridad).
+    risk_detector = RulesRiskDetector.from_file(settings.risk_lexicon_file)
+    templates = load_response_templates(settings.templates_dir)
+    crisis_events = InMemoryCrisisEventRepository()
 
     analyze = AnalyzeAndRespond(
         encoder=StubEncoder(),
         llm=FakeLLM(),
-        risk_detector=BasicRiskDetector(),
+        risk_detector=risk_detector,
         risk_policy=policy,
         fusion=fusion,
         secondary_mapper=mapper,
@@ -105,6 +118,8 @@ def build_container(settings: Settings) -> Container:
         repository=conversations,
         clock=SystemClock(),
         ids=UuidGenerator(),
+        templates=templates,
+        crisis_events=crisis_events,
         config=AnalyzeConfig(
             max_text_length=settings.max_message_length,
             history_window=settings.risk_history_window,
@@ -129,4 +144,7 @@ def build_container(settings: Settings) -> Container:
             chunker=ParagraphChunker(), embedder=HashEmbedder(), store=knowledge
         ),
         list_strategies=ListStrategies(catalog=catalog),
+        risk_detector=risk_detector,
+        templates=templates,
+        crisis_events=crisis_events,
     )

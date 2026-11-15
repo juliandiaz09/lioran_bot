@@ -3,6 +3,7 @@ from chatbot.application.ports.outbound.classification import (
     LLMPort,
     RiskDetectorPort,
 )
+from chatbot.application.ports.outbound.crisis import CrisisEventPort
 from chatbot.application.ports.outbound.persistence import (
     ConversationRepositoryPort,
     FeedbackRepositoryPort,
@@ -21,6 +22,7 @@ __all__ = [
     "ChunkerPort",
     "ClockPort",
     "ConversationRepositoryPort",
+    "CrisisEventPort",
     "DocumentStorePort",
     "EmbedderPort",
     "EmotionClassifierPort",

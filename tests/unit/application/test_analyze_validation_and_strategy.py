@@ -1,9 +1,8 @@
 from chatbot.adapters.outbound.llm.llm_fake import FakeLLM
 from chatbot.adapters.outbound.memory.selector import RuleBasedSelector
 from chatbot.application.dto import AnalyzeConfig, LLMClassification
-from chatbot.application.templates import SAFE_TEMPLATE
 from chatbot.domain.models import RiskLevel
-from helpers import MIEDO, command, make_harness
+from helpers import MIEDO, TEMPLATES, command, make_harness
 
 MALA = "Creo que tienes depresión; toma un antidepresivo."
 BUENA = "Respira lento y con calma. ¿Te sirvió esta sugerencia?"
@@ -27,14 +26,14 @@ async def test_si_falla_dos_veces_usa_plantilla_segura():
     llm = _llm(MALA, MALA)
     h = await make_harness(llm=llm)
     r = await h.use_case.execute(command())
-    assert r.respuesta == SAFE_TEMPLATE and len(llm.generate_calls) == 2 and r.fuentes == ()
+    assert r.respuesta == TEMPLATES.segura and len(llm.generate_calls) == 2 and r.fuentes == ()
 
 
 async def test_sin_regeneraciones_configuradas_solo_un_intento():
     llm = _llm(MALA, BUENA)
     h = await make_harness(llm=llm, config=AnalyzeConfig(max_regenerations=0))
     r = await h.use_case.execute(command())
-    assert r.respuesta == SAFE_TEMPLATE and len(llm.generate_calls) == 1
+    assert r.respuesta == TEMPLATES.segura and len(llm.generate_calls) == 1
 
 
 async def test_rechaza_telefonos_inventados():
@@ -72,4 +71,4 @@ async def test_si_el_bandido_falla_degrada_a_la_primera_candidata():
     h = await make_harness(selector=RuleBasedSelector(fail=True))
     r = await h.use_case.execute(command())
     assert r.estrategia is not None and r.estrategia.id == "respiracion_4_6"
-    assert r.respuesta != SAFE_TEMPLATE
+    assert r.respuesta != TEMPLATES.segura

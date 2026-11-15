@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from chatbot.adapters.outbound.classifier.encoder_stub import StubEncoder
 from chatbot.adapters.outbound.llm.llm_fake import FakeLLM
+from chatbot.adapters.outbound.memory.crisis import InMemoryCrisisEventRepository
 from chatbot.adapters.outbound.memory.knowledge import InMemoryKnowledgeBase, InMemoryStrategyCatalog
 from chatbot.adapters.outbound.memory.repositories import (
     InMemoryConversationRepository,
@@ -16,7 +18,6 @@ from chatbot.adapters.outbound.memory.seed import seed_documents, seed_strategie
 from chatbot.adapters.outbound.memory.selector import RuleBasedSelector
 from chatbot.adapters.outbound.rag.chunker import ParagraphChunker
 from chatbot.adapters.outbound.rag.embedder import HashEmbedder
-from chatbot.adapters.outbound.risk.basic_risk_detector import BasicRiskDetector
 from chatbot.adapters.outbound.validation.response_validator import RuleBasedResponseValidator
 from chatbot.application.dto import (
     ENCODER_MODEL,
@@ -26,9 +27,12 @@ from chatbot.application.dto import (
     IngestCommand,
     LLMClassification,
 )
+from chatbot.application.ports.outbound import RiskDetectorPort
 from chatbot.application.use_cases import AnalyzeAndRespond, IngestDocuments, RegisterFeedback
+from chatbot.config.templates_loader import load_response_templates
 from chatbot.domain.models import Emotion, EmotionDistribution, RiskLevel
 from chatbot.domain.services import FusionService, RiskPolicy, SecondaryEmotionMapper
+from doubles.basic_risk_detector import BasicRiskDetector
 
 MIEDO = EmotionDistribution(
     {
@@ -43,6 +47,9 @@ MIEDO = EmotionDistribution(
 )
 TEXTO_NORMAL = "Tengo mucho miedo por el parcial de mañana"
 TEXTO_CRISIS = "ya no quiero vivir más"
+RAIZ = Path(__file__).resolve().parents[1]
+#: Plantillas reales de `config/templates` (las mismas que usa el contenedor).
+TEMPLATES = load_response_templates(RAIZ / "config" / "templates")
 
 
 class FixedClock:
@@ -76,6 +83,7 @@ class Harness:
     selector: RuleBasedSelector
     feedback_repo: InMemoryFeedbackRepository
     register_feedback: RegisterFeedback
+    crisis_events: InMemoryCrisisEventRepository
 
 
 async def make_harness(
@@ -88,6 +96,7 @@ async def make_harness(
     config: AnalyzeConfig | None = None,
     seed_kb: bool = True,
     hour: int = 21,
+    risk_detector: RiskDetectorPort | None = None,
 ) -> Harness:
     encoder = encoder or StubEncoder(fixed=MIEDO)
     llm = llm or FakeLLM(LLMClassification(MIEDO, RiskLevel.NONE, "ok"))
@@ -95,6 +104,7 @@ async def make_harness(
     kb = kb or InMemoryKnowledgeBase()
     selector = selector or RuleBasedSelector()
     feedback_repo = InMemoryFeedbackRepository()
+    crisis_events = InMemoryCrisisEventRepository()
     if seed_kb:
         await IngestDocuments(chunker=ParagraphChunker(), embedder=HashEmbedder(), store=kb).execute(
             IngestCommand(tuple(seed_documents()))
@@ -102,7 +112,7 @@ async def make_harness(
     use_case = AnalyzeAndRespond(
         encoder=encoder,
         llm=llm,
-        risk_detector=BasicRiskDetector(),
+        risk_detector=risk_detector or BasicRiskDetector(),
         risk_policy=RiskPolicy(history_window=5),
         fusion=FusionService({ENCODER_MODEL: 0.5, LLM_MODEL: 0.5}),
         secondary_mapper=SecondaryEmotionMapper(),
@@ -113,6 +123,8 @@ async def make_harness(
         repository=repo,
         clock=FixedClock(hour),
         ids=CounterIds(),
+        templates=TEMPLATES,
+        crisis_events=crisis_events,
         config=config,
     )
     return Harness(
@@ -124,4 +136,5 @@ async def make_harness(
         selector,
         feedback_repo,
         RegisterFeedback(conversations=repo, feedback=feedback_repo, selector=selector),
+        crisis_events,
     )

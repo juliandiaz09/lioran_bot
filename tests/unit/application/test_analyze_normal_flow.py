@@ -4,9 +4,8 @@ import pytest
 
 from chatbot.application.dto import AnalyzeConfig
 from chatbot.application.errors import EmptyMessage
-from chatbot.application.templates import SAFE_TEMPLATE
 from chatbot.domain.models import Emotion, RiskLevel
-from helpers import MIEDO, TEXTO_NORMAL, command, make_harness
+from helpers import MIEDO, TEMPLATES, TEXTO_NORMAL, command, make_harness
 
 
 async def test_flujo_normal_completo():
@@ -19,7 +18,7 @@ async def test_flujo_normal_completo():
     assert r.riesgo is RiskLevel.NONE and r.es_crisis is False
     assert r.estrategia is not None and r.estrategia.id == "respiracion_4_6"
     assert r.respuesta.rstrip().endswith("?")
-    assert r.respuesta != SAFE_TEMPLATE
+    assert r.respuesta != TEMPLATES.segura
     assert {f.doc_id for f in r.fuentes} == {"tec-respiracion-4-6"}
     assert set(r.modelos_usados) == {"encoder", "llm"} and r.degradado is False
     assert r.desacuerdo_modelos == pytest.approx(0.0)

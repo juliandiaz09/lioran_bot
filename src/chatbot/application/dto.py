@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
@@ -31,6 +32,41 @@ class AnalyzeConfig:
     persistence_timeout_s: float = 3.0
     crisis_lookup_timeout_s: float = 1.0
     max_regenerations: int = 1
+
+
+@dataclass(frozen=True, slots=True)
+class ResponseTemplates:
+    """Textos fijos del sistema, ya leídos por el contenedor (la capa de aplicación no lee archivos).
+
+    PENDIENTES DE APROBACIÓN por Bienestar Universitario / psicología. Los contactos NUNCA van aquí:
+    salen del catálogo institucional (RAG) y se insertan en el marcador `{contactos}` de `crisis`.
+    """
+
+    crisis: str
+    crisis_sin_contactos: str
+    segura: str
+    #: Versión de cada plantilla (para auditoría), p. ej. {"crisis": "0.1.0-borrador"}.
+    versiones: dict[str, str] = field(default_factory=dict)
+
+    MARCADOR_CONTACTOS = "{contactos}"
+
+    def render_crisis(self, textos_contacto: Sequence[str]) -> str:
+        """Plantilla de crisis con los contactos del catálogo; sin contactos, el texto de respaldo."""
+        contactos = "\n".join(textos_contacto) if textos_contacto else self.crisis_sin_contactos
+        return self.crisis.replace(self.MARCADOR_CONTACTOS, contactos)
+
+
+# --------------------------------------------------------------------------- crisis (seguimiento humano)
+@dataclass(frozen=True, slots=True)
+class CrisisEvent:
+    """Aviso para el seguimiento humano. NUNCA incluye el texto del usuario."""
+
+    trace_id: str
+    conversation_id: str
+    user_ref: str
+    categorias: tuple[str, ...]
+    fuente_riesgo: str
+    timestamp: datetime
 
 
 # --------------------------------------------------------------------------- analizar
